@@ -51,75 +51,118 @@ The AI Feedback Loops pattern involves multiple AI components interacting in a c
 ### Example Implementation
 
 ```flip
-// Strategic AI - Top level decision maker
+// Strategic AI - Top level that sets overall goals and strategy
 fun strategic-ai input:
-  input >> `As the strategic AI, analyze this situation and determine high-level objectives and priorities. Return a structured strategic plan.`
+  input >> `As the Strategic AI, analyze this input and determine high-level objectives.
+  Return a structured plan with overall goals, priorities, and strategic direction.` >> object()
 
-// Tactical AIs - Middle level planners for different domains
+// Tactical AIs - Middle level that develops implementation plans
 fun financial-tactical-ai strategy:
-  strategy >> `As a financial planning tactical AI, develop a detailed budget and investment plan based on this strategic plan.`
+  strategy >> `As a Financial Tactical AI, develop a detailed financial plan to implement
+  these strategic objectives. Include budget allocation, investment strategies, and financial milestones.`
 
 fun marketing-tactical-ai strategy:
-  strategy >> `As a marketing tactical AI, develop a comprehensive marketing campaign strategy based on this strategic plan.`
+  strategy >> `As a Marketing Tactical AI, develop a detailed marketing plan to implement
+  these strategic objectives. Include target audience, channels, messaging, and campaign timeline.`
 
 fun operations-tactical-ai strategy:
-  strategy >> `As an operations tactical AI, develop a detailed logistics and supply chain plan based on this strategic plan.`
+  strategy >> `As an Operations Tactical AI, develop a detailed operational plan to implement
+  these strategic objectives. Include workflow optimizations, resource allocation, and implementation timeline.`
 
-// Operational AIs - Bottom level executors
-fun budgeting-ai financial_plan:
-  financial_plan >> `As a budgeting operational AI, create specific budget allocations with detailed line items based on this financial plan.`
+// Route strategic objectives to appropriate tactical AIs
+fun tactical-router strategy_type strategy:
+  match(
+    strategy_type == "financial" => financial-tactical-ai(strategy),
+    strategy_type == "marketing" => marketing-tactical-ai(strategy),
+    strategy_type == "operations" => operations-tactical-ai(strategy),
+    _ => `No specialized tactical AI available for ${strategy_type}. Using general planning approach.`
+  )
 
-fun advertising-ai marketing_plan:
-  marketing_plan >> `As an advertising operational AI, create specific ad campaigns with targeting parameters, creative briefs, and channel strategies.`
+// Operational AIs - Bottom level that handles specific execution tasks
+fun budget-ai plan:
+  plan >> `As a Budget Operational AI, create a detailed budget spreadsheet based on this financial plan.
+  Include line items, cost projections, and monthly breakdowns.`
 
-fun logistics-ai operations_plan:
-  operations_plan >> `As a logistics operational AI, create detailed shipping schedules, inventory requirements, and warehouse operations plans.`
+fun investment-ai plan:
+  plan >> `As an Investment Operational AI, create specific investment recommendations
+  based on this financial plan. Include asset allocation, specific securities, and expected returns.`
 
-// Feedback collection AI - gathers information from lower levels
-fun feedback-collection-ai operational_results:
-  operational_results >> `Analyze these operational results and summarize key insights, challenges, and opportunities for strategic adjustment.`
+fun advertising-ai plan:
+  plan >> `As an Advertising Operational AI, create specific ad campaign specifications
+  based on this marketing plan. Include ad copy, audience targeting parameters, and platform-specific details.`
 
-// Main orchestration function
-fun hierarchical-orchestration input:
+fun social-media-ai plan:
+  plan >> `As a Social Media Operational AI, create a social media content calendar
+  based on this marketing plan. Include post content, timing, and engagement strategies.`
+
+fun staffing-ai plan:
+  plan >> `As a Staffing Operational AI, create detailed staffing recommendations
+  based on this operations plan. Include roles, headcount, skills required, and hiring timeline.`
+
+fun workflow-ai plan:
+  plan >> `As a Workflow Operational AI, create detailed process documentation
+  based on this operations plan. Include process maps, standard operating procedures, and efficiency metrics.`
+
+// Route tactical plans to appropriate operational AIs
+fun operational-router task_type plan:
+  match(
+    task_type == "budget" => budget-ai(plan),
+    task_type == "investment" => investment-ai(plan),
+    task_type == "advertising" => advertising-ai(plan),
+    task_type == "social_media" => social-media-ai(plan),
+    task_type == "staffing" => staffing-ai(plan),
+    task_type == "workflow" => workflow-ai(plan),
+    _ => `No specialized operational AI available for ${task_type}. Using general execution approach.`
+  )
+
+// Main orchestration function that manages the entire hierarchy
+fun hierarchical-orchestrator input:
   let([
-    // Level 1: Strategic planning
-    strategic_plan: input >> strategic-ai,
+    // Level 1: Strategic AI sets overall direction
+    strategic_plan: strategic-ai(input),
 
-    // Level 2: Tactical planning across domains
-    financial_plan: strategic_plan >> financial-tactical-ai,
-    marketing_plan: strategic_plan >> marketing-tactical-ai,
-    operations_plan: strategic_plan >> operations-tactical-ai,
+    // Level 2: Tactical AIs develop implementation plans
+    financial_plan: tactical-router("financial", strategic_plan),
+    marketing_plan: tactical-router("marketing", strategic_plan),
+    operations_plan: tactical-router("operations", strategic_plan),
 
-    // Level 3: Operational execution
-    budget_details: financial_plan >> budgeting-ai,
-    ad_campaigns: marketing_plan >> advertising-ai,
-    logistics_schedule: operations_plan >> logistics-ai,
+    // Level 3: Operational AIs execute specific tasks
+    budget_execution: operational-router("budget", financial_plan),
+    investment_execution: operational-router("investment", financial_plan),
+    advertising_execution: operational-router("advertising", marketing_plan),
+    social_media_execution: operational-router("social_media", marketing_plan),
+    staffing_execution: operational-router("staffing", operations_plan),
+    workflow_execution: operational-router("workflow", operations_plan),
 
-    // Collect all operational results
-    operational_results: {
-      budget: budget_details,
-      advertising: ad_campaigns,
-      logistics: logistics_schedule
+    // Compile results from all levels of the hierarchy
+    hierarchical_results: {
+      strategic_level: strategic_plan,
+      tactical_level: {
+        financial: financial_plan,
+        marketing: marketing_plan,
+        operations: operations_plan
+      },
+      operational_level: {
+        budget: budget_execution,
+        investment: investment_execution,
+        advertising: advertising_execution,
+        social_media: social_media_execution,
+        staffing: staffing_execution,
+        workflow: workflow_execution
+      }
     },
 
-    // Feedback up the hierarchy
-    strategic_feedback: operational_results >> feedback-collection-ai
-  ],
-  // Return comprehensive response with all levels
-  {
-    input_scenario: input,
-    strategic_level: strategic_plan,
-    tactical_level: {
-      finance: financial_plan,
-      marketing: marketing_plan,
-      operations: operations_plan
-    },
-    operational_level: operational_results,
-    feedback_for_strategy: strategic_feedback
-  })
+    // Final aggregation of results
+    final_output: hierarchical_results >> `Create a comprehensive executive summary that synthesizes
+    the outputs from all three levels of AI analysis. Structure your response to show how strategic
+    decisions flow down to tactical plans and ultimately to operational execution.`
+  ], final_output)
 
-// Example usage with a business scenario
+// Example usage for business expansion planning
 main:
-  "Our company is launching an autonomous drone delivery service in three major cities. We need a comprehensive plan covering financial requirements, marketing strategy, and operational logistics. Budget constraint is $10 million for the first year."
-  >> hierarchical-orchestration
+  "We are a mid-sized e-commerce company selling sustainable home goods. We want to expand
+  into international markets with a focus on Europe, starting with Germany and France.
+  We have $2 million in capital available for this expansion and want to launch within
+  8 months. Develop a comprehensive plan for this international expansion."
+  >> hierarchical-orchestrator
 ```
