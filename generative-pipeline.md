@@ -50,73 +50,158 @@ An AI Mesh Network is a decentralized architecture where multiple AI components 
 
 ```flip
 
-// Input Module: Processes raw topic into structured concept
-fun input-module topic:
-  topic >> `Take this topic and develop it into a structured video concept. Include target audience, key messages, tone, and approximate length.`
+// Primary AI that generates content based on a prompt
+fun generate-content prompt revision_context=null:
+  if(revision_context >> is-null?(),
+    // Initial content generation - pass prompt directly
+    prompt >> `Create content based on this prompt`,
 
-// Processing Modules - Each specializes in a specific transformation
+    // Revision based on feedback - pass context object
+    {
+      prompt: prompt,
+      previous_content: revision_context.previous_content,
+      feedback: revision_context.feedback
+    } >> `Revise the content based on the provided prompt, previous content, and feedback`
+  )
 
-// Script Generation Module
-fun script-module concept:
-  concept >> `Based on this video concept, create a detailed script with narration, scene descriptions, and timing.`
-
-// Storyboard Creation Module
-fun storyboard-module script:
-  script >> `Create a storyboard description for this script. For each scene, describe the visual elements, camera angles, and transitions.`
-
-// Voice Generation Module
-fun voice-module script:
-  script >> `Based on this script, provide detailed voice specifications including tone, pacing, emphasis points, and emotional delivery.`
-
-// Visual Assets Module
-fun visual-module storyboard:
-  storyboard >> `For each scene in this storyboard, provide detailed specifications for visual creation, including style guides, color schemes, and animation instructions.`
-
-// Music & Sound Module
-fun sound-module script storyboard:
+// Secondary AI that evaluates content for quality and criteria
+fun evaluate-content content criteria:
   {
-    script: script,
-    storyboard: storyboard
-  } >> `Recommend appropriate background music, sound effects, and audio transitions for each scene in this production.`
+    content: content,
+    criteria: criteria
+  } >> `Evaluate this content based on the provided criteria. For each criterion, provide a score (1-10), specific feedback, and whether it meets the criterion (true/false). Return as structured JSON.` >> object()
 
-// Output Module: Finalizes and packages everything
-fun output-module components:
-  components >> `Compile these elements into a comprehensive video production package. Provide a summary of the project, detailed production instructions, and post-production guidelines.`
+// Function to check if all criteria are met
+fun all-criteria-met evaluation:
+  evaluation.criteria >> map(criterion -> criterion.meets_criteria) >> every(x -> x == true)
 
-// Main pipeline function that orchestrates the entire process
-fun video-creation-pipeline topic:
+// Function to extract actionable feedback from evaluation
+fun extract-feedback evaluation:
+  evaluation.criteria >>
+    filter(criterion -> criterion.meets_criteria == false) >>
+    map(criterion -> criterion.feedback) >>
+    join("\n\n")
+
+// Main feedback loop function
+fun content-feedback-loop prompt criteria max_iterations=5:
   let([
-    // Stage 1: Develop the concept
-    concept: topic >> input-module,
+    // Initialize loop state
+    initial_state: {
+      content: prompt >> generate-content,
+      iteration: 1,
+      history: [],
+      criteria: criteria
+    }
+  ],
+    // Start the iterative loop
+    loop(initial_state, state ->
+      let([
+        // Evaluate current content
+        evaluation: evaluate-content(state.content, state.criteria),
 
-    // Stage 2: Create the script
-    script: concept >> script-module,
+        // Check if all criteria are met or max iterations reached
+        criteria_met: all-criteria-met(evaluation),
+        max_reached: state.iteration >= max_iterations,
 
-    // Stage 3: Develop parallel elements
-    storyboard: script >> storyboard-module,
-    voice_specs: script >> voice-module,
+        // Record this iteration in history
+        new_history: state.history >> concat([{
+          iteration: state.iteration,
+          content: state.content,
+          evaluation: evaluation
+        }]),
 
-    // Stage 4: Visual and audio planning
-    visuals: storyboard >> visual-module,
-    sound_plan: sound-module(script, storyboard),
+        // Determine next steps based on conditions
+        next_action: match(
+          criteria_met => {
+            status: "success",
+            message: "All criteria met successfully",
+            final_content: state.content,
+            iterations: state.iteration,
+            history: new_history
+          },
 
-    // Stage 5: Combine all components
-    components: {
-      concept: concept,
-      script: script,
-      storyboard: storyboard,
-      voice: voice_specs,
-      visuals: visuals,
-      sound: sound_plan
-    },
+          max_reached => {
+            status: "max_iterations",
+            message: "Maximum iterations reached before all criteria met",
+            final_content: state.content,
+            iterations: state.iteration,
+            history: new_history
+          },
 
-    // Stage 6: Generate final production package
-    production_package: components >> output-module
-  ], production_package)
+          _ => {
+            // Extract feedback and create revision context
+            feedback: extract-feedback(evaluation),
+            revision_context: {
+              previous_content: state.content,
+              feedback: feedback
+            },
 
-// Example usage
-main:
-  "Create an educational video explaining quantum computing for high school students"
-  >> video-creation-pipeline
+            // Generate improved content based on feedback
+            improved_content: generate-content(prompt, revision_context),
+
+            // Continue the loop with updated state
+            next_state: {
+              content: improved_content,
+              iteration: state.iteration + 1,
+              history: new_history,
+              criteria: state.criteria
+            }
+          }
+        )
+      ],
+        // If we have a result, return it; otherwise recur with the next state
+        match(
+          next_action.status >> is-defined?() => next_action,
+          _ => recur(next_action.next_state)
+        )
+      )
+    )
+  )
+
+// Define evaluation criteria for different content types
+fun blog-post-criteria:
+  [
+    {name: "clarity", description: "Content is clear and easy to understand"},
+    {name: "factual_accuracy", description: "All facts and claims are accurate"},
+    {name: "engagement", description: "Content is engaging and maintains reader interest"},
+    {name: "seo_optimization", description: "Content includes relevant keywords and is optimized for search"},
+    {name: "call_to_action", description: "Content includes effective calls to action"}
+  ]
+
+fun marketing-copy-criteria:
+  [
+    {name: "persuasiveness", description: "Copy is persuasive and compelling"},
+    {name: "brand_voice", description: "Copy matches the brand's tone and voice"},
+    {name: "benefit_focus", description: "Copy emphasizes customer benefits rather than features"},
+    {name: "conciseness", description: "Copy is concise and impactful"},
+    {name: "call_to_action", description: "Copy includes clear and effective calls to action"}
+  ]
+
+// Example usage - create a blog post with feedback loops
+main prompt:
+  let([
+    // Determine content type and criteria based on prompt
+    content_type: prompt >> `Analyze this prompt and determine if it's requesting a blog post or marketing copy. Return only "blog_post" or "marketing_copy"`,
+
+    criteria: match(
+      content_type == "blog_post" => blog-post-criteria(),
+      content_type == "marketing_copy" => marketing-copy-criteria(),
+      _ => blog-post-criteria() // default to blog post criteria
+    ),
+
+    // Run the feedback loop
+    result: content-feedback-loop(prompt, criteria),
+
+    // Generate a summary of the improvement process
+    improvement_summary: result >> `Analyze the content improvement across iterations. Highlight key changes made and how the feedback was incorporated.`
+  ],
+    // Return the final result with summary
+    {
+      final_content: result.final_content,
+      iterations_required: result.iterations,
+      improvement_summary: improvement_summary,
+      met_all_criteria: result.status == "success"
+    }
+  )
 
 ```
