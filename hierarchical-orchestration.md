@@ -75,7 +75,10 @@ fun tactical-router strategy_type strategy:
     strategy_type == "financial" => financial-tactical-ai(strategy),
     strategy_type == "marketing" => marketing-tactical-ai(strategy),
     strategy_type == "operations" => operations-tactical-ai(strategy),
-    _ => `No specialized tactical AI available for ${strategy_type}. Using general planning approach.`
+    _ => {
+      type: strategy_type,
+      strategy: strategy
+    } >> `No specialized tactical AI available for the provided type. Using general planning approach.`
   )
 
 // Operational AIs - Bottom level that handles specific execution tasks
@@ -112,7 +115,10 @@ fun operational-router task_type plan:
     task_type == "social_media" => social-media-ai(plan),
     task_type == "staffing" => staffing-ai(plan),
     task_type == "workflow" => workflow-ai(plan),
-    _ => `No specialized operational AI available for ${task_type}. Using general execution approach.`
+    _ => {
+      type: task_type,
+      plan: plan
+    } >> `No specialized operational AI available for the provided type. Using general execution approach.`
   )
 
 // Main orchestration function that manages the entire hierarchy
