@@ -1,50 +1,27 @@
-## Generative AI Pipelines
+## AI Feedback Loops
 
 ### Description
 
-Generative AI Pipelines consist of a series of AI components arranged sequentially, where each component performs a specific function, transforming the data step by step. This pattern enables the creation of complex outputs through layered processing, similar to an assembly line in manufacturing.
+The AI Feedback Loops pattern involves multiple AI components interacting in a cyclical manner. The output of one AI serves as the input for another, creating a continuous loop that refines results iteratively. This pattern enhances system performance through self-correction and adaptation based on feedback.
 
 ### Components
 
--  **Input Module**: Collects and preprocesses raw data.
--  **Processing Modules**: Multiple AIs that perform specific transformations (e.g., data cleaning, feature extraction, content generation).
--  **Output Module**: Finalizes the output for delivery or storage.
+-  **Primary AI**: Generates initial outputs.
+-  **Secondary AI**: Evaluates, critiques, or enhances the outputs of the Primary AI.
+-  **Feedback Mechanism**: Facilitates communication between AIs for iterative improvement.
 
 ### Workflow
 
--  **Data Collection**: The Input Module gathers raw data from sources.
--  **Sequential Processing**: Data moves through each Processing Module, undergoing transformations.
--  **Output Generation**: The Output Module compiles the final product.
+-  **Initial Output**: The Primary AI produces an output based on input data.
+-  **Evaluation**: The Secondary AI analyzes the output for quality, accuracy, or compliance.
+-  **Feedback Integration**: The Primary AI receives feedback and adjusts its processing accordingly.
+-  **Iteration**: Steps 1–3 repeat until the desired quality is achieved.
 
 ### Potential Use Cases
 
--  **Personalized Marketing Content**: Data on customer behavior is processed to generate tailored marketing materials.
--  **End-to-End Document Processing**: Scanning physical documents, extracting text, translating content, and summarizing information.
--  **Automated Video Creation**: Generating scripts, creating animations, adding voice-overs, and editing into a final video.
-
-## AI Mesh Networks
-
-### Description
-
-An AI Mesh Network is a decentralized architecture where multiple AI components (nodes) operate independently yet collaborate through direct communication. This pattern allows for distributed processing and resilience, as the system doesn't rely on a central coordinator.
-
-### Components
-
--  **AI Nodes**: Independent AI agents capable of processing and decision-making.
--  **Communication Protocols**: Standards that enable nodes to exchange information efficiently.
--  **Shared Knowledge Base (optional)**: A repository where nodes can contribute and access collective data.
-
-### Workflow
-
--  **Local Processing**: Each AI Node processes data independently.
--  **Peer Communication**: Nodes share results and insights with neighboring nodes.
--  **Collective Decision-Making**: Nodes adjust their actions based on shared information, leading to emergent system behavior.
-
-### Potential Use Cases
-
--  **Decentralized Energy Grids**: Smart meters and appliances communicate to optimize energy consumption across a network.
--  **Collaborative Robotics**: Robots in a warehouse coordinate tasks like sorting and packaging without central control.
--  **Disaster Monitoring**: Sensor networks detect environmental changes, share data, and collectively assess risks.
+-  **Refined Language Translation**: One AI translates text; another reviews for context and idiomatic expressions, enhancing the translation iteratively.
+-  **Automated Coding**: An AI writes code based on requirements; a secondary AI reviews for bugs or inefficiencies, leading to improved code quality.
+-  **Medical Diagnosis**: An AI suggests a diagnosis; another AI cross-checks with medical databases to confirm or refine the diagnosis.
 
 ### Example Implementation
 
@@ -203,5 +180,4 @@ main prompt:
       met_all_criteria: result.status == "success"
     }
   )
-
 ```
