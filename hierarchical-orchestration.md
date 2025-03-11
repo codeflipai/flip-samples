@@ -166,9 +166,9 @@ fun hierarchical-orchestrator input:
 
 // Example usage for business expansion planning
 main:
-  "We are a mid-sized e-commerce company selling sustainable home goods. We want to expand
+  let([p: "We are a mid-sized e-commerce company selling sustainable home goods. We want to expand
   into international markets with a focus on Europe, starting with Germany and France.
   We have $2 million in capital available for this expansion and want to launch within
-  8 months. Develop a comprehensive plan for this international expansion."
-  >> hierarchical-orchestrator
+  8 months. Develop a comprehensive plan for this international expansion."],
+  hierarchical-orchestrator(p))
 ```
